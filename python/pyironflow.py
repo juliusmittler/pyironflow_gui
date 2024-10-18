@@ -49,11 +49,11 @@ class PyironFlow:
         ],
             layout={'border': '1px solid black'})
 
-    
-    def on_button_clicked(self, b):
+        def on_button_clicked(self):
             custom(self.workflows[0], self.macro_name)
                 
-    self.macro_button.on_click(on_button_clicked)
+        self.macro_button.on_click(on_button_clicked)
+
     
     def get_workflow(self, tab_index=0):
         wf_widget = self.wf_widgets[tab_index]

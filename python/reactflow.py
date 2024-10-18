@@ -1,5 +1,6 @@
 from pyiron_workflow import Workflow
 from pyiron_workflow.channels import NotData
+from python.create_macro import custom
 
 import anywidget
 import pathlib
@@ -16,6 +17,8 @@ class ReactFlowWidget(anywidget.AnyWidget):
     _css = path / "widget.css"
     nodes = traitlets.Unicode('[]').tag(sync=True)
     edges = traitlets.Unicode('[]').tag(sync=True)
+    selected_nodes = traitlets.Unicode('[]').tag(sync=True)
+    selected_edges = traitlets.Unicode('[]').tag(sync=True)
     commands = traitlets.Unicode('[]').tag(sync=True)
 
 
@@ -242,7 +245,10 @@ class PyironFlowWidget:
                 #     display(node.outputs.channel_dict[keys[0]].value)
                 elif command == 'delete_node':
                     self.wf.remove_child(node_name)
-
+    
+                elif command == 'macro':
+                    custom(self.get_selected_workflow(), "custom_macro")
+    
     def update(self):
         nodes = get_nodes(self.wf)
         edges = get_edges(self.wf)
@@ -277,6 +283,23 @@ class PyironFlowWidget:
 
         nodes = wf._children
         dict_edges = json.loads(self.gui.edges)
+        for dict_edge in dict_edges:
+            dict_to_edge(dict_edge, nodes)
+
+        return wf
+
+    def get_selected_workflow(self):
+        workflow_label = self.wf.label
+
+        wf = Workflow(workflow_label)
+        dict_nodes = json.loads(self.gui.selected_nodes)
+        for dict_node in dict_nodes:
+            node = dict_to_node(dict_node)
+            wf.add_child(node)
+            # wf.add_child(node(label=node.label))
+
+        nodes = wf._children
+        dict_edges = json.loads(self.gui.selected_edges)
         for dict_edge in dict_edges:
             dict_to_edge(dict_edge, nodes)
 
