@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, createContext } from 'react';
+import React, { useCallback, useState, useEffect, createContext   } from 'react';
 import { createRender, useModel } from "@anywidget/react";
 import ELK from 'elkjs/lib/elk.bundled.js';
 import {
@@ -10,6 +10,7 @@ import {
   applyNodeChanges,  
   addEdge,
   useOnSelectionChange,
+
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -28,6 +29,28 @@ export const UpdateDataContext = createContext(null);
 
 // const nodeTypes = { textUpdater: TextUpdaterNode, customNode: CustomNode };
 
+function SelectionDisplay() {
+  const [selectedNodes, setSelectedNodes] = useState([]);
+  const [selectedEdges, setSelectedEdges] = useState([]);
+ 
+  // the passed handler has to be memoized, otherwise the hook will not work correctly
+  const onChange = useCallback(({ nodes, edges }) => {
+    setSelectedNodes(nodes.map((node) => node.id));
+    setSelectedEdges(edges.map((edge) => edge.id));
+  }, []);
+ 
+  useOnSelectionChange({
+    onChange,
+  });
+ 
+  return (
+    <div>
+      <p>Selected nodes: {selectedNodes.join(', ')}</p>
+      <p>Selected edges: {selectedEdges.join(', ')}</p>
+    </div>
+  );
+}
+
 
 const render = createRender(() => {
   const model = useModel();
@@ -37,6 +60,9 @@ const render = createRender(() => {
 
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges); 
+
+  const selectedNodes = [];
+  const selectedEdges = [];
 
   const nodeTypes = {
     textUpdater: TextUpdaterNode, 
@@ -87,13 +113,42 @@ const render = createRender(() => {
       setEdges(JSON.parse(new_edges));
       });     
 
+    
+
+    
   const onNodesChange = useCallback(
     (changes) => {
       setNodes((nds) => {
         const new_nodes = applyNodeChanges(changes, nds); 
         console.log('onNodesChange: ', changes, new_nodes);
+        for (const i in changes) {
+            if (Object.hasOwn(changes[i], 'selected')) {
+              if (changes[i].selected){
+                for (const k in nodes){
+                  if (nodes[k].id == changes[i].id) {
+                    selectedNodes.push(nodes[k]);
+                  }  
+
+                }
+              }
+              else{
+                for (const j in selectedNodes){
+                  if (selectedNodes[j].id == changes[i].id) {
+                //const index = selectedNodes[j].indexOf(changes[i].id);
+                    selectedNodes.splice(j, 1); 
+                  }  
+                }
+              }
+            }
+        }
+        console.log('selectedNodes:', selectedNodes); 
+        console.log('nodes:', nodes); 
         model.set("nodes", JSON.stringify(new_nodes));
+        model.set("selected_nodes", JSON.stringify(selectedNodes));
         model.save_changes();
+        
+            
+        
         return new_nodes;
       });
     },
@@ -104,7 +159,35 @@ const render = createRender(() => {
     (changes) => {
         setEdges((eds) => {
             const new_edges = applyEdgeChanges(changes, eds);
+            for (const i in changes) {
+              if (Object.hasOwn(changes[i], 'selected')) {
+                if (changes[i].selected){
+                  for (const k in new_edges){
+                    if (new_edges[k].id == changes[i].id) {
+                      selectedEdges.push(new_edges[k]);
+                    }   
+                  }
+                }
+                else{
+                  for (const j in selectedEdges){
+                    if (selectedEdges[j].id == changes[i].id) {
+                      selectedEdges.splice(j, 1); 
+                    }  
+                  }
+                }
+              }
+            }
+            for (const n in selectedEdges){
+                var filterResult = new_edges.filter((edge) => edge.id === selectedEdges[n].id);
+                if (filterResult == []){
+                    selectedEdges.splice(n, 1);
+                }
+            }
+                
+            console.log('selectedEdges:', selectedEdges); 
+            console.log('edges:', new_edges);
             model.set("edges", JSON.stringify(new_edges));
+            model.set("selected_edges", JSON.stringify(selectedEdges));
             model.save_changes();
             return new_edges;            
       });
@@ -161,28 +244,6 @@ const render = createRender(() => {
       })),
     ),
   );    
-
-function SelectionDisplay() {
-  const [selectedNodes, setSelectedNodes] = useState([]);
-  const [selectedEdges, setSelectedEdges] = useState([]);
- 
-  // the passed handler has to be memoized, otherwise the hook will not work correctly
-  const onChange = useCallback(({ nodes, edges }) => {
-    setSelectedNodes(nodes.map((node) => node.id));
-    setSelectedEdges(edges.map((edge) => edge.id));
-  }, []);
- 
-  useOnSelectionChange({
-    onChange,
-  });
- 
-  return (
-    <div>
-      <p>Selected nodes: {selectedNodes.join(', ')}</p>
-      <p>Selected edges: {selectedEdges.join(', ')}</p>
-    </div>
-  );
-}
   
 
   return (    
@@ -201,6 +262,7 @@ function SelectionDisplay() {
           <Background variant="dots" gap={12} size={1} />
           <MiniMap />  
           <Controls />
+            
         </ReactFlow>
       </UpdateDataContext.Provider>
     </div>

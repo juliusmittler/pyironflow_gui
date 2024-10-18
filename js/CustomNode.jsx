@@ -46,6 +46,13 @@ export default memo(({ data }) => {
         model.save_changes();        
     } 
 
+    const macroFunction = () => {
+        // create custom macro
+        console.log('macro: ', data.label) 
+        model.set("commands", `macro: ${data.label}`);
+        model.save_changes();        
+    } 
+
     
     const renderLabel = (label) => {
         return (
@@ -185,6 +192,7 @@ export default memo(({ data }) => {
         );
     }     
 
+    //        isVisible={data.forceToolbarVisible || undefined}
 
   return (
     <div>
@@ -203,12 +211,13 @@ export default memo(({ data }) => {
             ))}
         </div>
       <NodeToolbar
-        isVisible={data.forceToolbarVisible || undefined}
+        isVisible={true}
         position={data.toolbarPosition}
       >
           <button onClick={runFunction}>Run</button>
           {/* <button onClick={outputFunction}>Output</button> */}
           <button onClick={sourceFunction}>Source</button>
+          <button onClick={macroFunction}>Macro</button>
       </NodeToolbar>        
     </div>
   );
